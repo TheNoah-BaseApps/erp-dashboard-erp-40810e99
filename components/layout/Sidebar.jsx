@@ -9,7 +9,10 @@ import {
   Archive, 
   AlertTriangle, 
   BarChart3,
-  User
+  User,
+  FileText,
+  TrendingUp,
+  Target
 } from 'lucide-react';
 
 const navigation = [
@@ -20,6 +23,9 @@ const navigation = [
   { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Profile', href: '/profile', icon: User },
+  { name: 'Sales Records', href: '/sales-records', icon: FileText },
+  { name: 'Actual Sales', href: '/actual-sales', icon: TrendingUp },
+  { name: 'Sales Targets', href: '/sales-targets', icon: Target },
 ];
 
 export default function Sidebar() {
