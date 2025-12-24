@@ -1,28 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Target, Plus, Edit, Trash2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { toast } from 'sonner';
 
 export default function SalesTargetsPage() {
+  const router = useRouter();
   const [targets, setTargets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTarget, setEditingTarget] = useState(null);
-  const [formData, setFormData] = useState({
-    product_id: '',
-    month: '',
-    target_amount: ''
-  });
 
   useEffect(() => {
     fetchTargets();
@@ -50,51 +42,6 @@ export default function SalesTargetsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const url = editingTarget 
-        ? `/api/sales-targets/${editingTarget.id}`
-        : '/api/sales-targets';
-      const method = editingTarget ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        toast.success(editingTarget ? 'Sales target updated' : 'Sales target created');
-        setShowModal(false);
-        setEditingTarget(null);
-        setFormData({ product_id: '', month: '', target_amount: '' });
-        fetchTargets();
-      } else {
-        throw new Error(data.error || 'Failed to save sales target');
-      }
-    } catch (err) {
-      console.error('Error saving sales target:', err);
-      toast.error(err.message);
-    }
-  };
-
-  const handleEdit = (target) => {
-    setEditingTarget(target);
-    setFormData({
-      product_id: target.product_id || '',
-      month: target.month || '',
-      target_amount: target.target_amount || ''
-    });
-    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -147,7 +94,7 @@ export default function SalesTargetsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Sales Targets</h1>
-          <Button onClick={() => { setEditingTarget(null); setShowModal(true); }}>
+          <Button onClick={() => router.push('/sales-targets/new')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Sales Target
           </Button>
@@ -165,7 +112,7 @@ export default function SalesTargetsPage() {
               <div className="text-center py-8 text-gray-600">
                 <Target className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                 <p className="mb-4">No sales targets set yet</p>
-                <Button onClick={() => setShowModal(true)}>
+                <Button onClick={() => router.push('/sales-targets/new')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Target
                 </Button>
@@ -175,7 +122,7 @@ export default function SalesTargetsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-3">Product ID</th>
+                      <th className="text-left p-3">Product</th>
                       <th className="text-left p-3">Month</th>
                       <th className="text-left p-3">Target Amount</th>
                       <th className="text-left p-3">Actions</th>
@@ -184,12 +131,12 @@ export default function SalesTargetsPage() {
                   <tbody>
                     {targets.map((target) => (
                       <tr key={target.id} className="border-b hover:bg-gray-50">
-                        <td className="p-3 font-semibold">{target.product_id}</td>
+                        <td className="p-3 font-semibold">{target.product_name || target.product_id}</td>
                         <td className="p-3">{target.month}</td>
                         <td className="p-3">{target.target_amount}</td>
                         <td className="p-3">
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(target)}>
+                            <Button size="sm" variant="outline" onClick={() => router.push(`/sales-targets/${target.id}`)}>
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="destructive" onClick={() => handleDelete(target.id)}>
@@ -205,52 +152,6 @@ export default function SalesTargetsPage() {
             )}
           </CardContent>
         </Card>
-
-        <Dialog open={showModal} onOpenChange={setShowModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingTarget ? 'Edit' : 'Add'} Sales Target</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="product_id">Product ID</Label>
-                <Input
-                  id="product_id"
-                  value={formData.product_id}
-                  onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="month">Month (YYYY-MM)</Label>
-                <Input
-                  id="month"
-                  type="month"
-                  value={formData.month}
-                  onChange={(e) => setFormData({ ...formData, month: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="target_amount">Target Amount</Label>
-                <Input
-                  id="target_amount"
-                  value={formData.target_amount}
-                  onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingTarget ? 'Update' : 'Create'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );

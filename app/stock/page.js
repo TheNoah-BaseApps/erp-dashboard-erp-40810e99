@@ -29,7 +29,13 @@ export default function StockPage() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        setStockRecords(data.data || []);
+        const records = (data.data || []).map(stock => ({
+          ...stock,
+          estimated_stock_days: (stock.estimated_stock_days && !isNaN(stock.estimated_stock_days)) 
+            ? Number(stock.estimated_stock_days) 
+            : null
+        }));
+        setStockRecords(records);
       } else {
         throw new Error(data.error || 'Failed to fetch stock records');
       }

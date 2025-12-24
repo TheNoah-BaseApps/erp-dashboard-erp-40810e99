@@ -31,23 +31,32 @@ export async function GET(request) {
     const product_id = searchParams.get('product_id');
     const month = searchParams.get('month');
 
-    let sql = 'SELECT * FROM actual_sales WHERE 1=1';
+    let sql = `
+      SELECT 
+        a.*,
+        p.id as product_id,
+        p.name as product_name,
+        p.part_no as product_part_no
+      FROM actual_sales a
+      INNER JOIN products p ON a.product_id = p.id
+      WHERE 1=1
+    `;
     const params = [];
     let paramCount = 1;
 
     if (product_id) {
-      sql += ` AND product_id = $${paramCount}`;
+      sql += ` AND a.product_id = $${paramCount}`;
       params.push(product_id);
       paramCount++;
     }
 
     if (month) {
-      sql += ` AND month = $${paramCount}`;
+      sql += ` AND a.month = $${paramCount}`;
       params.push(month);
       paramCount++;
     }
 
-    sql += ' ORDER BY month DESC, product_id ASC';
+    sql += ' ORDER BY a.month DESC, p.name ASC';
 
     const result = await query(sql, params);
 
@@ -107,6 +116,19 @@ export async function POST(request) {
       );
     }
 
+    // Validate product exists
+    const productCheck = await query(
+      'SELECT id, name, part_no FROM products WHERE id = $1',
+      [product_id]
+    );
+
+    if (productCheck.rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Product not found' },
+        { status: 400 }
+      );
+    }
+
     const result = await query(
       `INSERT INTO actual_sales (product_id, month, actual_sales_amount, created_at, updated_at) 
        VALUES ($1, $2, $3, NOW(), NOW()) 
@@ -114,8 +136,15 @@ export async function POST(request) {
       [product_id, month, actual_sales_amount]
     );
 
+    // Return with product details
+    const responseData = {
+      ...result.rows[0],
+      product_name: productCheck.rows[0].name,
+      product_part_no: productCheck.rows[0].part_no
+    };
+
     return NextResponse.json(
-      { success: true, data: result.rows[0] },
+      { success: true, data: responseData },
       { status: 201 }
     );
   } catch (error) {

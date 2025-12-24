@@ -46,7 +46,17 @@ export async function GET(request) {
     const offset = (page - 1) * limit;
 
     const result = await query(
-      'SELECT * FROM sales_records ORDER BY invoice_date DESC LIMIT $1 OFFSET $2',
+      `SELECT 
+        sr.*,
+        p.id as product_table_id,
+        p.name as product_name,
+        p.part_no as product_part_no,
+        p.description as product_description,
+        p.price as product_price
+       FROM sales_records sr
+       LEFT JOIN products p ON sr.product_id = p.id
+       ORDER BY sr.invoice_date DESC 
+       LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
 
@@ -89,8 +99,6 @@ export async function GET(request) {
  *               - invoice_date
  *               - due_date
  *               - invoice_no
- *               - product
- *               - part_no
  *               - customer
  *               - quantity
  *               - pricing
@@ -104,6 +112,8 @@ export async function GET(request) {
  *                 format: date
  *               invoice_no:
  *                 type: string
+ *               product_id:
+ *                 type: integer
  *               product:
  *                 type: string
  *               part_no:
@@ -127,21 +137,44 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat } = body;
+    const { invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat } = body;
 
-    if (!invoice_date || !due_date || !invoice_no || !product || !part_no || !customer || !quantity || !pricing || !vat) {
+    if (!invoice_date || !due_date || !invoice_no || !customer || !quantity || !pricing || !vat) {
       return NextResponse.json(
-        { success: false, error: 'All fields are required' },
+        { success: false, error: 'Required fields are missing' },
+        { status: 400 }
+      );
+    }
+
+    // Validate product_id if provided
+    if (product_id) {
+      const productCheck = await query(
+        'SELECT id FROM products WHERE id = $1',
+        [product_id]
+      );
+      
+      if (productCheck.rows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid product_id: Product does not exist' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // If product_id is not provided but product and part_no are, still validate
+    if (!product_id && (!product || !part_no)) {
+      return NextResponse.json(
+        { success: false, error: 'Either product_id or both product and part_no are required' },
         { status: 400 }
       );
     }
 
     const result = await query(
       `INSERT INTO sales_records 
-       (invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) 
+       (invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) 
        RETURNING *`,
-      [invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat]
+      [invoice_date, due_date, invoice_no, product_id || null, product || null, part_no || null, customer, quantity, pricing, vat]
     );
 
     return NextResponse.json(

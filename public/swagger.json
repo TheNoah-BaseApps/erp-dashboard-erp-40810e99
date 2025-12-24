@@ -837,8 +837,6 @@
                   "invoice_date",
                   "due_date",
                   "invoice_no",
-                  "product",
-                  "part_no",
                   "customer",
                   "quantity",
                   "pricing",
@@ -855,6 +853,9 @@
                   },
                   "invoice_no": {
                     "type": "string"
+                  },
+                  "product_id": {
+                    "type": "integer"
                   },
                   "product": {
                     "type": "string"
