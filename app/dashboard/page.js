@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, Users, AlertTriangle, Calendar, FileText, TrendingUp, Target } from 'lucide-react';
+import { Package, Users, AlertTriangle, Calendar, FileText, TrendingUp, Target, DollarSign, Wallet, Tag } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 export default function DashboardPage() {
@@ -21,7 +21,7 @@ export default function DashboardPage() {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const [productsRes, customersRes, criticalStockRes, alertsRes, salesRecordsRes, actualSalesRes, salesTargetsRes] = await Promise.all([
+      const [productsRes, customersRes, criticalStockRes, alertsRes, salesRecordsRes, actualSalesRes, salesTargetsRes, productCostsRes, fixedCostsRes, salesPricesRes] = await Promise.all([
         fetch('/api/products', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
@@ -42,17 +42,29 @@ export default function DashboardPage() {
         }),
         fetch('/api/sales-targets', {
           headers: { 'Authorization': `Bearer ${token}` }
-        })
+        }),
+        fetch('/api/product-costs', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(() => ({ json: async () => ({ data: [] }) })),
+        fetch('/api/fixed-costs', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(() => ({ json: async () => ({ data: [] }) })),
+        fetch('/api/sales-prices', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(() => ({ json: async () => ({ data: [] }) }))
       ]);
 
-      const [products, customers, criticalStock, alerts, salesRecords, actualSales, salesTargets] = await Promise.all([
+      const [products, customers, criticalStock, alerts, salesRecords, actualSales, salesTargets, productCosts, fixedCosts, salesPrices] = await Promise.all([
         productsRes.json(),
         customersRes.json(),
         criticalStockRes.json(),
         alertsRes.json(),
         salesRecordsRes.json(),
         actualSalesRes.json(),
-        salesTargetsRes.json()
+        salesTargetsRes.json(),
+        productCostsRes.json(),
+        fixedCostsRes.json(),
+        salesPricesRes.json()
       ]);
 
       setStats({
@@ -62,7 +74,10 @@ export default function DashboardPage() {
         expiringItems: alerts.data?.expiring?.length || 0,
         totalSalesRecords: salesRecords.data?.length || 0,
         totalActualSales: actualSales.data?.length || 0,
-        totalSalesTargets: salesTargets.data?.length || 0
+        totalSalesTargets: salesTargets.data?.length || 0,
+        totalProductCosts: productCosts.data?.length || 0,
+        totalFixedCosts: fixedCosts.data?.length || 0,
+        totalSalesPrices: salesPrices.data?.length || 0
       });
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
@@ -215,6 +230,36 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600 mb-2">Set and manage monthly sales targets by product</p>
                 <div className="text-2xl font-bold text-purple-600">{stats?.totalSalesTargets || 0}</div>
                 <p className="text-xs text-muted-foreground">Sales targets set</p>
+              </a>
+
+              <a href="/product-costs" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <DollarSign className="h-5 w-5 text-amber-600" />
+                  <h3 className="font-semibold">Product Costs</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Track unit costs by product and month</p>
+                <div className="text-2xl font-bold text-amber-600">{stats?.totalProductCosts || 0}</div>
+                <p className="text-xs text-muted-foreground">Product cost records</p>
+              </a>
+
+              <a href="/fixed-costs" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <Wallet className="h-5 w-5 text-indigo-600" />
+                  <h3 className="font-semibold">Fixed Costs</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Manage fixed operational costs by month</p>
+                <div className="text-2xl font-bold text-indigo-600">{stats?.totalFixedCosts || 0}</div>
+                <p className="text-xs text-muted-foreground">Fixed cost records</p>
+              </a>
+
+              <a href="/sales-prices" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <Tag className="h-5 w-5 text-cyan-600" />
+                  <h3 className="font-semibold">Sales Prices</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Set and track sales prices by product and month</p>
+                <div className="text-2xl font-bold text-cyan-600">{stats?.totalSalesPrices || 0}</div>
+                <p className="text-xs text-muted-foreground">Sales price records</p>
               </a>
             </div>
           </CardContent>

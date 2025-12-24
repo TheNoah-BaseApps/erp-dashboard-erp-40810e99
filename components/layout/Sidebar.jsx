@@ -12,7 +12,10 @@ import {
   User,
   FileText,
   TrendingUp,
-  Target
+  Target,
+  DollarSign,
+  Wallet,
+  Tag
 } from 'lucide-react';
 
 const navigation = [
@@ -26,6 +29,9 @@ const navigation = [
   { name: 'Sales Records', href: '/sales-records', icon: FileText },
   { name: 'Actual Sales', href: '/actual-sales', icon: TrendingUp },
   { name: 'Sales Targets', href: '/sales-targets', icon: Target },
+  { name: 'Product Costs', href: '/product-costs', icon: DollarSign },
+  { name: 'Fixed Costs', href: '/fixed-costs', icon: Wallet },
+  { name: 'Sales Prices', href: '/sales-prices', icon: Tag },
 ];
 
 export default function Sidebar() {
