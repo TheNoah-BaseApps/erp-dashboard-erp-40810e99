@@ -156,7 +156,7 @@ export async function POST(request) {
     if (product_id) {
       console.log('Fetching product details for product_id:', product_id);
       const productResult = await query(
-        'SELECT name, part_no FROM products WHERE id = $1',
+        'SELECT product, part_no FROM products WHERE id = $1',
         [product_id]
       );
       
@@ -169,7 +169,7 @@ export async function POST(request) {
       }
 
       // Set product name and part_no from the products table
-      product = productResult.rows[0].name;
+      product = productResult.rows[0].product;
       part_no = productResult.rows[0].part_no;
       console.log('Product details retrieved:', { product, part_no });
     }
@@ -187,10 +187,10 @@ export async function POST(request) {
 
     const result = await query(
       `INSERT INTO sales_records 
-       (invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat, created_at, updated_at) 
+       (invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat, product_id, created_at, updated_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) 
        RETURNING *`,
-      [invoice_date, due_date, invoice_no, product_id || null, product, part_no, customer, quantity, pricing, vat]
+      [invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat, product_id || null]
     );
 
     console.log('Sales record created successfully:', result.rows[0]);
