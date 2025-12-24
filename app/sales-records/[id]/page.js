@@ -163,7 +163,7 @@ export default function SalesRecordEditPage() {
     setFormData({
       ...formData,
       product_id: productId,
-      part_no: selectedProduct?.part_no || ''
+      part_no: selectedProduct?.product_code || ''
     });
   };
 
@@ -266,7 +266,7 @@ export default function SalesRecordEditPage() {
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
-                          {product.name} ({product.part_no})
+                          {product.product_name} ({product.product_code})
                         </SelectItem>
                       ))}
                     </SelectContent>
