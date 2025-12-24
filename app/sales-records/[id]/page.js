@@ -52,9 +52,13 @@ export default function SalesRecordEditPage() {
       const data = await response.json();
       if (response.ok && data.success) {
         setProducts(data.data || []);
+      } else {
+        console.error('Failed to fetch products:', data.error);
+        toast.error('Failed to load products');
       }
     } catch (err) {
       console.error('Error fetching products:', err);
+      toast.error('Error loading products');
     }
   };
 
@@ -254,7 +258,7 @@ export default function SalesRecordEditPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="product_id">Product *</Label>
+                  <Label htmlFor="product_id">Product</Label>
                   <Select value={formData.product_id} onValueChange={handleProductChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select product" />

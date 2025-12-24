@@ -41,14 +41,19 @@ export default function SalesTargetsEditPage() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/products', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
       });
       const data = await response.json();
       if (response.ok && data.success) {
         setProducts(data.data || []);
+      } else {
+        throw new Error(data.error || 'Failed to fetch products');
       }
     } catch (err) {
       console.error('Error fetching products:', err);
+      toast.error('Failed to load products');
     }
   };
 
@@ -65,7 +70,7 @@ export default function SalesTargetsEditPage() {
       if (response.ok && data.success) {
         const record = data.data;
         setFormData({
-          product_id: record.product_id || '',
+          product_id: record.product_id ? String(record.product_id) : '',
           month: record.month || '',
           target_amount: record.target_amount || ''
         });
@@ -193,13 +198,16 @@ export default function SalesTargetsEditPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="product_id">Product *</Label>
-                  <Select value={formData.product_id} onValueChange={(value) => setFormData({ ...formData, product_id: value })}>
+                  <Select 
+                    value={formData.product_id} 
+                    onValueChange={(value) => setFormData({ ...formData, product_id: value })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select product" />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
+                        <SelectItem key={product.id} value={String(product.id)}>
                           {product.name} ({product.part_no})
                         </SelectItem>
                       ))}
@@ -220,6 +228,8 @@ export default function SalesTargetsEditPage() {
                   <Label htmlFor="target_amount">Target Amount *</Label>
                   <Input
                     id="target_amount"
+                    type="number"
+                    step="0.01"
                     value={formData.target_amount}
                     onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
                     required
