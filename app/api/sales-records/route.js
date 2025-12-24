@@ -47,15 +47,20 @@ export async function GET(request) {
 
     const result = await query(
       `SELECT 
-        sr.*,
-        p.id as product_table_id,
-        p.name as product_name,
-        p.part_no as product_part_no,
-        p.description as product_description,
-        p.price as product_price
-       FROM sales_records sr
-       LEFT JOIN products p ON sr.product_id = p.id
-       ORDER BY sr.invoice_date DESC 
+        id,
+        invoice_date,
+        due_date,
+        invoice_no,
+        product,
+        part_no,
+        customer,
+        quantity,
+        pricing,
+        vat,
+        product_id,
+        created_at
+       FROM sales_records
+       ORDER BY invoice_date DESC 
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );

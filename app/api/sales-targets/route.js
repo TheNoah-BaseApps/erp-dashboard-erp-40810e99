@@ -33,30 +33,30 @@ export async function GET(request) {
 
     let sql = `
       SELECT 
-        st.*,
-        p.id as product_id,
-        p.name as product_name,
-        p.part_no as product_part_no
-      FROM sales_targets st
-      INNER JOIN products p ON st.product_id = p.id
+        id,
+        product_id,
+        month,
+        target_amount,
+        created_at
+      FROM sales_targets
       WHERE 1=1
     `;
     const params = [];
     let paramCount = 1;
 
     if (product_id) {
-      sql += ` AND st.product_id = $${paramCount}`;
+      sql += ` AND product_id = $${paramCount}`;
       params.push(product_id);
       paramCount++;
     }
 
     if (month) {
-      sql += ` AND st.month = $${paramCount}`;
+      sql += ` AND month = $${paramCount}`;
       params.push(month);
       paramCount++;
     }
 
-    sql += ' ORDER BY st.month DESC, p.name ASC';
+    sql += ' ORDER BY month DESC, product_id';
 
     const result = await query(sql, params);
 
@@ -116,19 +116,6 @@ export async function POST(request) {
       );
     }
 
-    // Validate product exists
-    const productCheck = await query(
-      'SELECT id, name, part_no FROM products WHERE id = $1',
-      [product_id]
-    );
-
-    if (productCheck.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found' },
-        { status: 400 }
-      );
-    }
-
     const result = await query(
       `INSERT INTO sales_targets (product_id, month, target_amount, created_at, updated_at) 
        VALUES ($1, $2, $3, NOW(), NOW()) 
@@ -136,21 +123,8 @@ export async function POST(request) {
       [product_id, month, target_amount]
     );
 
-    // Fetch complete data with product details
-    const completeData = await query(
-      `SELECT 
-        st.*,
-        p.id as product_id,
-        p.name as product_name,
-        p.part_no as product_part_no
-      FROM sales_targets st
-      INNER JOIN products p ON st.product_id = p.id
-      WHERE st.id = $1`,
-      [result.rows[0].id]
-    );
-
     return NextResponse.json(
-      { success: true, data: completeData.rows[0] },
+      { success: true, data: result.rows[0] },
       { status: 201 }
     );
   } catch (error) {
