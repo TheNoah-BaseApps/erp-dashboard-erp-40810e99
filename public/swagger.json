@@ -719,7 +719,8 @@
                   "customer",
                   "quantity",
                   "pricing",
-                  "vat"
+                  "vat",
+                  "product_id"
                 ],
                 "properties": {
                   "invoice_date": {
@@ -734,10 +735,8 @@
                     "type": "string"
                   },
                   "product_id": {
-                    "type": "integer"
-                  },
-                  "product": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "uuid"
                   },
                   "part_no": {
                     "type": "string"

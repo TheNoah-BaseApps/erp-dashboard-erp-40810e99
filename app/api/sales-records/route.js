@@ -51,7 +51,6 @@ export async function GET(request) {
         invoice_date,
         due_date,
         invoice_no,
-        product,
         part_no,
         customer,
         quantity,
@@ -108,6 +107,7 @@ export async function GET(request) {
  *               - quantity
  *               - pricing
  *               - vat
+ *               - product_id
  *             properties:
  *               invoice_date:
  *                 type: string
@@ -118,9 +118,8 @@ export async function GET(request) {
  *               invoice_no:
  *                 type: string
  *               product_id:
- *                 type: integer
- *               product:
  *                 type: string
+ *                 format: uuid
  *               part_no:
  *                 type: string
  *               customer:
@@ -142,55 +141,24 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    let { invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat } = body;
+    const { invoice_date, due_date, invoice_no, product_id, part_no, customer, quantity, pricing, vat } = body;
 
-    if (!invoice_date || !due_date || !invoice_no || !customer || !quantity || !pricing || !vat) {
-      console.error('Missing required fields:', { invoice_date, due_date, invoice_no, customer, quantity, pricing, vat });
+    if (!invoice_date || !due_date || !invoice_no || !customer || !quantity || !pricing || !vat || !product_id) {
+      console.error('Missing required fields:', { invoice_date, due_date, invoice_no, customer, quantity, pricing, vat, product_id });
       return NextResponse.json(
         { success: false, error: 'Required fields are missing' },
         { status: 400 }
       );
     }
 
-    // If product_id is provided, fetch product details from products table
-    if (product_id) {
-      console.log('Fetching product details for product_id:', product_id);
-      const productResult = await query(
-        'SELECT product, part_no FROM products WHERE id = $1',
-        [product_id]
-      );
-      
-      if (productResult.rows.length === 0) {
-        console.error('Product not found for product_id:', product_id);
-        return NextResponse.json(
-          { success: false, error: 'Invalid product_id: Product does not exist' },
-          { status: 400 }
-        );
-      }
-
-      // Set product name and part_no from the products table
-      product = productResult.rows[0].product;
-      part_no = productResult.rows[0].part_no;
-      console.log('Product details retrieved:', { product, part_no });
-    }
-
-    // Validate that we have product details either from product_id lookup or direct input
-    if (!product || !part_no) {
-      console.error('Missing product details:', { product, part_no, product_id });
-      return NextResponse.json(
-        { success: false, error: 'Either product_id or both product and part_no are required' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Inserting sales record:', { invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat });
+    console.log('Inserting sales record:', { invoice_date, due_date, invoice_no, product_id, part_no, customer, quantity, pricing, vat });
 
     const result = await query(
       `INSERT INTO sales_records 
-       (invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat, product_id, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) 
+       (invoice_date, due_date, invoice_no, part_no, customer, quantity, pricing, vat, product_id, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) 
        RETURNING *`,
-      [invoice_date, due_date, invoice_no, product, part_no, customer, quantity, pricing, vat, product_id || null]
+      [invoice_date, due_date, invoice_no, part_no || null, customer, quantity, pricing, vat, product_id]
     );
 
     console.log('Sales record created successfully:', result.rows[0]);

@@ -84,14 +84,12 @@ export async function PUT(request, { params }) {
   try {
     const { id } = params;
     const body = await request.json();
-    const { invoice_date, due_date, invoice_no, product_id, customer, quantity, pricing, vat } = body;
+    const { invoice_date, due_date, invoice_no, part_no, product_id, customer, quantity, pricing, vat } = body;
 
-    let productName = null;
-
-    // Validate product_id exists and get product name if provided
+    // Validate product_id exists if provided
     if (product_id) {
-      console.log('Fetching product details for product_id:', product_id);
-      const productCheck = await query('SELECT id, name FROM products WHERE id = $1', [product_id]);
+      console.log('Validating product_id:', product_id);
+      const productCheck = await query('SELECT id FROM products WHERE id = $1', [product_id]);
       if (productCheck.rows.length === 0) {
         console.error('Product not found for product_id:', product_id);
         return NextResponse.json(
@@ -99,25 +97,29 @@ export async function PUT(request, { params }) {
           { status: 400 }
         );
       }
-      productName = productCheck.rows[0].name;
-      console.log('Product found:', productName);
+      console.log('Product validated successfully');
     }
+
+    console.log('Updating sales record with data:', { invoice_date, due_date, invoice_no, part_no, product_id, customer, quantity, pricing, vat });
 
     const result = await query(
       `UPDATE sales_records 
-       SET invoice_date = $1, due_date = $2, invoice_no = $3, product_id = $4, 
-           product_name = $5, customer = $6, quantity = $7, pricing = $8, vat = $9, updated_at = NOW()
+       SET invoice_date = $1, due_date = $2, invoice_no = $3, part_no = $4, 
+           product_id = $5, customer = $6, quantity = $7, pricing = $8, vat = $9, updated_at = NOW()
        WHERE id = $10 
        RETURNING *`,
-      [invoice_date, due_date, invoice_no, product_id, productName, customer, quantity, pricing, vat, id]
+      [invoice_date, due_date, invoice_no, part_no, product_id, customer, quantity, pricing, vat, id]
     );
 
     if (result.rows.length === 0) {
+      console.error('Sales record not found for id:', id);
       return NextResponse.json(
         { success: false, error: 'Sales record not found' },
         { status: 404 }
       );
     }
+
+    console.log('Sales record updated successfully');
 
     // Fetch the updated record with product details
     const updatedResult = await query(
@@ -136,6 +138,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ success: true, data: updatedResult.rows[0] });
   } catch (error) {
     console.error('Error updating sales record:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
