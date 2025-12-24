@@ -86,24 +86,30 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const { invoice_date, due_date, invoice_no, product_id, customer, quantity, pricing, vat } = body;
 
-    // Validate product_id exists if provided
+    let productName = null;
+
+    // Validate product_id exists and get product name if provided
     if (product_id) {
-      const productCheck = await query('SELECT id FROM products WHERE id = $1', [product_id]);
+      console.log('Fetching product details for product_id:', product_id);
+      const productCheck = await query('SELECT id, name FROM products WHERE id = $1', [product_id]);
       if (productCheck.rows.length === 0) {
+        console.error('Product not found for product_id:', product_id);
         return NextResponse.json(
           { success: false, error: 'Product not found' },
           { status: 400 }
         );
       }
+      productName = productCheck.rows[0].name;
+      console.log('Product found:', productName);
     }
 
     const result = await query(
       `UPDATE sales_records 
        SET invoice_date = $1, due_date = $2, invoice_no = $3, product_id = $4, 
-           customer = $5, quantity = $6, pricing = $7, vat = $8, updated_at = NOW()
-       WHERE id = $9 
+           product_name = $5, customer = $6, quantity = $7, pricing = $8, vat = $9, updated_at = NOW()
+       WHERE id = $10 
        RETURNING *`,
-      [invoice_date, due_date, invoice_no, product_id, customer, quantity, pricing, vat, id]
+      [invoice_date, due_date, invoice_no, product_id, productName, customer, quantity, pricing, vat, id]
     );
 
     if (result.rows.length === 0) {

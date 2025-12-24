@@ -142,45 +142,58 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat } = body;
+    let { invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat } = body;
 
     if (!invoice_date || !due_date || !invoice_no || !customer || !quantity || !pricing || !vat) {
+      console.error('Missing required fields:', { invoice_date, due_date, invoice_no, customer, quantity, pricing, vat });
       return NextResponse.json(
         { success: false, error: 'Required fields are missing' },
         { status: 400 }
       );
     }
 
-    // Validate product_id if provided
+    // If product_id is provided, fetch product details from products table
     if (product_id) {
-      const productCheck = await query(
-        'SELECT id FROM products WHERE id = $1',
+      console.log('Fetching product details for product_id:', product_id);
+      const productResult = await query(
+        'SELECT name, part_no FROM products WHERE id = $1',
         [product_id]
       );
       
-      if (productCheck.rows.length === 0) {
+      if (productResult.rows.length === 0) {
+        console.error('Product not found for product_id:', product_id);
         return NextResponse.json(
           { success: false, error: 'Invalid product_id: Product does not exist' },
           { status: 400 }
         );
       }
+
+      // Set product name and part_no from the products table
+      product = productResult.rows[0].name;
+      part_no = productResult.rows[0].part_no;
+      console.log('Product details retrieved:', { product, part_no });
     }
 
-    // If product_id is not provided but product and part_no are, still validate
-    if (!product_id && (!product || !part_no)) {
+    // Validate that we have product details either from product_id lookup or direct input
+    if (!product || !part_no) {
+      console.error('Missing product details:', { product, part_no, product_id });
       return NextResponse.json(
         { success: false, error: 'Either product_id or both product and part_no are required' },
         { status: 400 }
       );
     }
 
+    console.log('Inserting sales record:', { invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat });
+
     const result = await query(
       `INSERT INTO sales_records 
        (invoice_date, due_date, invoice_no, product_id, product, part_no, customer, quantity, pricing, vat, created_at, updated_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) 
        RETURNING *`,
-      [invoice_date, due_date, invoice_no, product_id || null, product || null, part_no || null, customer, quantity, pricing, vat]
+      [invoice_date, due_date, invoice_no, product_id || null, product, part_no, customer, quantity, pricing, vat]
     );
+
+    console.log('Sales record created successfully:', result.rows[0]);
 
     return NextResponse.json(
       { success: true, data: result.rows[0] },
