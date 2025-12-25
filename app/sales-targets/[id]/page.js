@@ -208,7 +208,7 @@ export default function SalesTargetsEditPage() {
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={String(product.id)}>
-                          {product.name} ({product.part_no})
+                          {product.product_name} ({product.product_code})
                         </SelectItem>
                       ))}
                     </SelectContent>

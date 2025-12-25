@@ -200,7 +200,7 @@ export default function ProductCostEditPage() {
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
-                          {product.name} ({product.part_no})
+                          {product.product_name} ({product.product_code})
                         </SelectItem>
                       ))}
                     </SelectContent>
