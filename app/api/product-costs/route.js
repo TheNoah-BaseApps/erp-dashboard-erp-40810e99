@@ -54,23 +54,23 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let sql = 'SELECT * FROM product_costs WHERE 1=1';
+    let sql = 'SELECT pc.*, p.name as product_name, p.part_no FROM product_costs pc LEFT JOIN products p ON pc.product_id = p.id WHERE 1=1';
     const params = [];
     let paramCount = 1;
 
     if (product_id) {
-      sql += ` AND product_id = $${paramCount}`;
+      sql += ` AND pc.product_id = $${paramCount}`;
       params.push(product_id);
       paramCount++;
     }
 
     if (month) {
-      sql += ` AND month = $${paramCount}`;
+      sql += ` AND pc.month = $${paramCount}`;
       params.push(month);
       paramCount++;
     }
 
-    sql += ` ORDER BY month DESC, created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    sql += ` ORDER BY pc.month DESC, pc.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(limit, offset);
 
     const result = await query(sql, params);

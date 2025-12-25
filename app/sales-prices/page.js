@@ -18,41 +18,25 @@ export default function SalesPricesPage() {
   const [filteredPrices, setFilteredPrices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
-  const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetchProducts();
     fetchSalesPrices();
   }, []);
 
   useEffect(() => {
     const filtered = salesPrices.filter(price => {
-      const product = products.find(p => p.id === price.product_id);
-      const productName = product ? product.name : '';
+      const productName = price.product_name || '';
+      const partNo = price.part_no || '';
       const searchLower = (searchTerm || '').toLowerCase();
       return (
         (productName || '').toLowerCase().includes(searchLower) ||
+        (partNo || '').toLowerCase().includes(searchLower) ||
         (price.month || '').toLowerCase().includes(searchLower) ||
         (price.sales_price || '').toString().toLowerCase().includes(searchLower)
       );
     });
     setFilteredPrices(filtered);
-  }, [searchTerm, salesPrices, products]);
-
-  const fetchProducts = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/products', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setProducts(data.data || []);
-      }
-    } catch (err) {
-      console.error('Error fetching products:', err);
-    }
-  };
+  }, [searchTerm, salesPrices]);
 
   const fetchSalesPrices = async () => {
     try {
@@ -101,11 +85,6 @@ export default function SalesPricesPage() {
       console.error('Error deleting sales price:', err);
       toast.error(err.message);
     }
-  };
-
-  const getProductName = (productId) => {
-    const product = products.find(p => p.id === productId);
-    return product ? `${product.name} (${product.part_no})` : 'Unknown Product';
   };
 
   if (loading) {
@@ -217,7 +196,7 @@ export default function SalesPricesPage() {
                   <tbody>
                     {filteredPrices.map((price) => (
                       <tr key={price.id} className="border-b hover:bg-muted/50">
-                        <td className="p-4">{getProductName(price.product_id)}</td>
+                        <td className="p-4">{price.product_name || 'Unknown'} ({price.part_no || 'N/A'})</td>
                         <td className="p-4">{price.month}</td>
                         <td className="p-4">${parseFloat(price.sales_price).toFixed(2)}</td>
                         <td className="p-4 text-right">

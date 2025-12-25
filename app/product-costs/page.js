@@ -18,41 +18,23 @@ export default function ProductCostsPage() {
   const [filteredCosts, setFilteredCosts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
-  const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetchProducts();
     fetchProductCosts();
   }, []);
 
   useEffect(() => {
     const filtered = productCosts.filter(cost => {
-      const product = products.find(p => p.id === cost.product_id);
-      const productName = product ? product.name : '';
       const searchLower = (searchTerm || '').toLowerCase();
       return (
-        (productName || '').toLowerCase().includes(searchLower) ||
+        (cost.product_name || '').toLowerCase().includes(searchLower) ||
+        (cost.part_no || '').toLowerCase().includes(searchLower) ||
         (cost.month || '').toLowerCase().includes(searchLower) ||
         (cost.unit_cost || '').toString().toLowerCase().includes(searchLower)
       );
     });
     setFilteredCosts(filtered);
-  }, [searchTerm, productCosts, products]);
-
-  const fetchProducts = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/products', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setProducts(data.data || []);
-      }
-    } catch (err) {
-      console.error('Error fetching products:', err);
-    }
-  };
+  }, [searchTerm, productCosts]);
 
   const fetchProductCosts = async () => {
     try {
@@ -101,11 +83,6 @@ export default function ProductCostsPage() {
       console.error('Error deleting product cost:', err);
       toast.error(err.message);
     }
-  };
-
-  const getProductName = (productId) => {
-    const product = products.find(p => p.id === productId);
-    return product ? `${product.name} (${product.part_no})` : 'Unknown Product';
   };
 
   if (loading) {
@@ -218,7 +195,7 @@ export default function ProductCostsPage() {
                   <tbody>
                     {filteredCosts.map((cost) => (
                       <tr key={cost.id} className="border-b hover:bg-muted/50">
-                        <td className="p-4">{getProductName(cost.product_id)}</td>
+                        <td className="p-4">{cost.product_name || 'Unknown'} ({cost.part_no || 'N/A'})</td>
                         <td className="p-4">{cost.month}</td>
                         <td className="p-4">${parseFloat(cost.unit_cost).toFixed(2)}</td>
                         <td className="p-4 text-right">
