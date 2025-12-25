@@ -29,10 +29,11 @@ export default function SalesPricesPage() {
     const filtered = salesPrices.filter(price => {
       const product = products.find(p => p.id === price.product_id);
       const productName = product ? product.name : '';
+      const searchLower = (searchTerm || '').toLowerCase();
       return (
-        productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.month.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.sales_price.toLowerCase().includes(searchTerm.toLowerCase())
+        (productName || '').toLowerCase().includes(searchLower) ||
+        (price.month || '').toLowerCase().includes(searchLower) ||
+        (price.sales_price || '').toString().toLowerCase().includes(searchLower)
       );
     });
     setFilteredPrices(filtered);

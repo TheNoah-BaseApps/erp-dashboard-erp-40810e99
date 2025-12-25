@@ -29,10 +29,11 @@ export default function ProductCostsPage() {
     const filtered = productCosts.filter(cost => {
       const product = products.find(p => p.id === cost.product_id);
       const productName = product ? product.name : '';
+      const searchLower = (searchTerm || '').toLowerCase();
       return (
-        productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cost.month.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cost.unit_cost.toLowerCase().includes(searchTerm.toLowerCase())
+        (productName || '').toLowerCase().includes(searchLower) ||
+        (cost.month || '').toLowerCase().includes(searchLower) ||
+        (cost.unit_cost || '').toString().toLowerCase().includes(searchLower)
       );
     });
     setFilteredCosts(filtered);
