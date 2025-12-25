@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
         p.description
        FROM actual_sales a
        LEFT JOIN products p ON a.product_id = p.id
-       WHERE a.id = $1`,
+       WHERE a.id = $1::uuid`,
       [id]
     );
 
@@ -94,7 +94,7 @@ export async function PUT(request, { params }) {
 
     // Validate product exists
     const productCheck = await query(
-      'SELECT id FROM products WHERE id = $1',
+      'SELECT id FROM products WHERE id = $1::uuid',
       [product_id]
     );
 
@@ -108,8 +108,8 @@ export async function PUT(request, { params }) {
 
     const result = await query(
       `UPDATE actual_sales 
-       SET product_id = $1, month = $2, actual_sales_amount = $3, updated_at = NOW()
-       WHERE id = $4
+       SET product_id = $1::uuid, month = $2, actual_sales_amount = $3, updated_at = NOW()
+       WHERE id = $4::uuid
        RETURNING *`,
       [product_id, month, actual_sales_amount, id]
     );
@@ -132,7 +132,7 @@ export async function PUT(request, { params }) {
         p.description
        FROM actual_sales a
        LEFT JOIN products p ON a.product_id = p.id
-       WHERE a.id = $1`,
+       WHERE a.id = $1::uuid`,
       [id]
     );
 
@@ -172,7 +172,7 @@ export async function DELETE(request, { params }) {
     const { id } = params;
     console.log('Deleting actual sales record with ID:', id);
     
-    const result = await query('DELETE FROM actual_sales WHERE id = $1 RETURNING *', [id]);
+    const result = await query('DELETE FROM actual_sales WHERE id = $1::uuid RETURNING *', [id]);
 
     if (result.rows.length === 0) {
       console.error('Actual sales record not found for deletion:', id);

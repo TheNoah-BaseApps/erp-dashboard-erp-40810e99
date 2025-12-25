@@ -27,10 +27,7 @@ export async function GET(request, { params }) {
     console.log('Fetching sales target with ID:', id);
     
     const result = await query(
-      `SELECT st.*, p.name as product_name, p.category, p.price
-       FROM sales_targets st
-       LEFT JOIN products p ON st.product_id::text = p.id::text
-       WHERE st.id::text = $1::text`,
+      'SELECT * FROM sales_targets WHERE id = $1',
       [id]
     );
 
@@ -87,20 +84,10 @@ export async function PUT(request, { params }) {
 
     console.log('Updating sales target:', { id, product_id, month, target_amount });
 
-    // Validate product exists
-    const productCheck = await query('SELECT id FROM products WHERE id::text = $1::text', [product_id]);
-    if (productCheck.rows.length === 0) {
-      console.error('Product not found for ID:', product_id);
-      return NextResponse.json(
-        { success: false, error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-
     const result = await query(
       `UPDATE sales_targets 
-       SET product_id = $1::text, month = $2, target_amount = $3, updated_at = NOW()
-       WHERE id::text = $4::text 
+       SET product_id = $1, month = $2, target_amount = $3, updated_at = NOW()
+       WHERE id = $4
        RETURNING *`,
       [product_id, month, target_amount, id]
     );
@@ -113,16 +100,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Fetch updated record with product details
-    const updatedResult = await query(
-      `SELECT st.*, p.name as product_name, p.category, p.price
-       FROM sales_targets st
-       LEFT JOIN products p ON st.product_id::text = p.id::text
-       WHERE st.id::text = $1::text`,
-      [id]
-    );
-
-    return NextResponse.json({ success: true, data: updatedResult.rows[0] });
+    return NextResponse.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Error updating sales target:', error);
     console.error('Error details:', { id: params?.id, message: error.message, stack: error.stack });
@@ -158,7 +136,7 @@ export async function DELETE(request, { params }) {
     const { id } = params;
     console.log('Deleting sales target with ID:', id);
     
-    const result = await query('DELETE FROM sales_targets WHERE id::text = $1::text RETURNING *', [id]);
+    const result = await query('DELETE FROM sales_targets WHERE id = $1 RETURNING *', [id]);
 
     if (result.rows.length === 0) {
       console.error('Sales target not found for deletion, ID:', id);
