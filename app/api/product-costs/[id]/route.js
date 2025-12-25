@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
     const { id } = params;
 
     const result = await query(
-      'SELECT * FROM product_costs WHERE id = $1',
+      'SELECT * FROM product_costs WHERE id::uuid = $1::uuid',
       [id]
     );
 
@@ -43,6 +43,7 @@ export async function GET(request, { params }) {
     });
   } catch (error) {
     console.error('Error fetching product cost:', error);
+    console.error('Error details:', { id: params.id, message: error.message, stack: error.stack });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -92,7 +93,7 @@ export async function PUT(request, { params }) {
     const result = await query(
       `UPDATE product_costs 
        SET product_id = $1, month = $2, unit_cost = $3, updated_at = NOW() 
-       WHERE id = $4 
+       WHERE id::uuid = $4::uuid 
        RETURNING *`,
       [product_id, month, unit_cost, id]
     );
@@ -110,6 +111,7 @@ export async function PUT(request, { params }) {
     });
   } catch (error) {
     console.error('Error updating product cost:', error);
+    console.error('Error details:', { id: params.id, body, message: error.message, stack: error.stack });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -142,7 +144,7 @@ export async function DELETE(request, { params }) {
     const { id } = params;
 
     const result = await query(
-      'DELETE FROM product_costs WHERE id = $1 RETURNING *',
+      'DELETE FROM product_costs WHERE id::uuid = $1::uuid RETURNING *',
       [id]
     );
 
@@ -159,6 +161,7 @@ export async function DELETE(request, { params }) {
     });
   } catch (error) {
     console.error('Error deleting product cost:', error);
+    console.error('Error details:', { id: params.id, message: error.message, stack: error.stack });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

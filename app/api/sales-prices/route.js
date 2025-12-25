@@ -43,12 +43,12 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let sql = 'SELECT sp.*, p.name as product_name, p.part_no FROM sales_prices sp LEFT JOIN products p ON sp.product_id = p.id WHERE 1=1';
+    let sql = 'SELECT sp.*, p.name as product_name, p.part_no FROM sales_prices sp LEFT JOIN products p ON sp.product_id::text = p.id::text WHERE 1=1';
     const params = [];
     let paramCount = 1;
 
     if (product_id) {
-      sql += ` AND sp.product_id = $${paramCount}`;
+      sql += ` AND sp.product_id::text = $${paramCount}::text`;
       params.push(product_id);
       paramCount++;
     }
@@ -70,6 +70,11 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Error fetching sales prices:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -124,7 +129,7 @@ export async function POST(request) {
 
     const result = await query(
       `INSERT INTO sales_prices (product_id, month, sales_price, created_at, updated_at) 
-       VALUES ($1, $2, $3, NOW(), NOW()) 
+       VALUES ($1::text, $2, $3, NOW(), NOW()) 
        RETURNING *`,
       [product_id, month, sales_price]
     );
@@ -135,6 +140,12 @@ export async function POST(request) {
     );
   } catch (error) {
     console.error('Error creating sales price:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      detail: error.detail
+    });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
