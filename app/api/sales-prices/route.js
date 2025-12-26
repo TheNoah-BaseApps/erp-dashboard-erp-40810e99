@@ -43,12 +43,15 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let sql = 'SELECT sp.*, p.name as product_name, p.part_no FROM sales_prices sp LEFT JOIN products p ON sp.product_id::text = p.id::text WHERE 1=1';
+    let sql = `SELECT sp.id, sp.product_id, sr.product as product_name, sp.month, sp.sales_price, sp.created_at, sp.updated_at 
+               FROM sales_prices sp 
+               LEFT JOIN sales_records sr ON sp.product_id = sr.product_id 
+               WHERE 1=1`;
     const params = [];
     let paramCount = 1;
 
     if (product_id) {
-      sql += ` AND sp.product_id::text = $${paramCount}::text`;
+      sql += ` AND sp.product_id = $${paramCount}`;
       params.push(product_id);
       paramCount++;
     }
@@ -59,6 +62,7 @@ export async function GET(request) {
       paramCount++;
     }
 
+    sql += ` GROUP BY sp.id, sp.product_id, sr.product, sp.month, sp.sales_price, sp.created_at, sp.updated_at`;
     sql += ` ORDER BY sp.month DESC, sp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(limit, offset);
 
@@ -129,7 +133,7 @@ export async function POST(request) {
 
     const result = await query(
       `INSERT INTO sales_prices (product_id, month, sales_price, created_at, updated_at) 
-       VALUES ($1::text, $2, $3, NOW(), NOW()) 
+       VALUES ($1, $2, $3, NOW(), NOW()) 
        RETURNING *`,
       [product_id, month, sales_price]
     );
